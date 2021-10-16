@@ -1,12 +1,23 @@
-import cherrypy
+import cherrypy, time, threading
 from fakesensors import getFakeTempF, getFakeTempC, getFakeHumidity
-
-# from realsensors import readHumidity, readTemp
+#from realsensors import readHumidity, readTemp
 
 times = 0
 humidity = 0
+armed = True
 
-class SecurityDashboard(object):
+def monitor():
+    while True:
+        global armed
+        print("🔵 watching...")
+        alert(armed)
+        time.sleep(1)
+
+def alert(armed):
+    if armed:
+        print("🟡 ALERT ALERT 🟡")
+
+class HomeMonitor(object):
     @cherrypy.expose
     def index(self):
         return open("dashboard.html").read()
@@ -14,16 +25,6 @@ class SecurityDashboard(object):
     @cherrypy.expose
     def testing(self):
         return open("dashboard-test.html").read()
-
-    @cherrypy.expose
-    def real(self):
-        result = readHumidity()
-        temp = readTemp()
-        if result and temp != None:
-            humidity, temperature = result
-            print("%s" % (humidity))
-            print("%s" % (temp))
-            return "read the sensors\n%s %s" % (humidity, temp)
 
     @cherrypy.expose
     def faketempc(self):
@@ -63,5 +64,24 @@ class SecurityDashboard(object):
         else:
             return str(round(humidity, 1))
 
+    @cherrypy.expose
+    def enable(self):
+        global armed
+        armed = True
+        print("🟢 alerts enabled")
 
-cherrypy.quickstart(SecurityDashboard())
+    @cherrypy.expose
+    def disable(self):
+        global armed
+        armed = False
+        print("🔴 alerts disabled")
+
+
+if __name__ == "__main__":
+    try:
+        t1 = threading.Thread(target=monitor)
+        t1.daemon = True
+        t1.start()
+        cherrypy.quickstart(HomeMonitor())
+    except Exception:
+        print("exception happened")

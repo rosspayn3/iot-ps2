@@ -1,38 +1,144 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <title>Temperatures</title>
-<body>
-    <div class="container mt-4">
-    <p>To put a Python variable into an HTML page, use brackets like this: </pre>{{variableName}}</pre></p>
-    <p>Then in cherrypy, return the HTML file with <pre>return open("file.html").read().format(variableName=abc123)</pre></p>
-    <hr>
-    <div class="card" style="width: 18rem;">
-      <div class="card-body" style="background-color: #d4f9fc">
-        <h4 class="card-title mb-4">Temperature & Humidity</h4>
-        <p class="card-text" id="tempc">Temp C: 0 C</p>
-        <p class="card-text" id="tempf">Temp F: 0 F</p>
-        <p class="card-text" id="humidity">Humidity: 0 %</p>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <style>
+    .gradient-custom {
+      height: 100vh;
+      background: #e3e3e3;
+      background: -webkit-linear-gradient(to bottom, rgb(255, 255, 255), rgba(63, 95, 114, 0.65));
+      background: linear-gradient(to bottom, rgb(255, 255, 255), rgba(63, 95, 114, 0.65))
+    }
+
+    .card {
+      outline: ridge 3px;
+    }
+  </style>
+  <title>Dashboard</title>
+</head>
+
+<body class="gradient-custom pt-4">
+  <div class="container">
+
+    <div class="card mb-4 text-center bg-light text-dark shadow">
+      <div class="card-body">
+        <h4 class="card-title mb-3">Home Monitoring Dashboard</h4>
+        <p class="card-text">Ross Payne & Jacob Baltazar</p>
       </div>
     </div>
+    <hr class="mb-5 bg-dark" style="height: 5px">
 
+    <div class="row">
 
+      <div class="col-md-5">
+        <div class="card mb-4 text-center bg-warning bg-gradient shadow">
+          <div class="card-body">
+            <h4 class="card-title mb-3">Temperature &#x1f321;</h4>
+            <p class="card-text" id="tempc">0 &deg;C</p>
+            <p class="card-text" id="tempf">0 &deg;F</p>
+          </div>
+        </div>
+
+        <div class="card mb-4 text-center bg-info bg-gradient shadow">
+          <div class="card-body">
+            <h3 class="card-title mb-4">Humidity &#x1f4a7;</h3>
+            <p class="card-text" id="humidity">Humidity: 0 %</p>
+          </div>
+        </div>
+        <!--end col-->
+      </div>
+
+      <div class="col-md-2"></div>
+      <!--end col-->
+
+      <div class="col-md-5">
+
+        <div class="card mb-4 text-center bg-primary bg-gradient shadow" id="monitoring-card">
+          <div class="card-body">
+            <h4 class="card-title mb-3">Monitoring &#x1f575;</h4>
+            <form action="/enable" method="post">
+              <button type="submit" name="enable" id="enable-btn" value="enable"
+                class="btn btn-success p-2 mx-2 border border-dark border-2">Enable</button>
+              <button type="submit" name="disable" id="disable-btn" value="disable"
+                class="btn btn-secondary p-2 mx-2 border border-dark border-2">Disable</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card mb-4 text-center bg-light shadow">
+          <div class="card-body">
+            <h4 class="card-title mb-3">Alerts &#x1f6a8;</h4>
+            <p class="card-text" id="humidity">None</p>
+          </div>
+        </div>
+
+        <!--end col-->
+      </div>
+
+      <!--end row-->
     </div>
-    
-    <script>
-      setInterval(async function getTemps(){
-        let resTempC = await fetch('tempc');
-        let resTempF = await fetch('tempf');
-        let resHum = await fetch('humidity');
-        let tempC = await resTempC.text();
-        let tempF = await resTempF.text();
-        let hum = await resHum.text()
-        console.log(`Temp C: ${tempC}\nTemp F: ${tempF}\nHumidity: ${hum} %`);
-        document.getElementById("tempf").innerText = `Temp F: ${tempF} F`;
-        document.getElementById("tempc").innerText = `Temp C: ${tempC} C`;
-        document.getElementById("humidity").innerText = `Humidity: ${hum} %`;
-      }, 2000);
-    </script>
+
+    <!--end container-->
+  </div>
+
+  <script>
+    setInterval(async function getTemps() {
+      let resTempC = await fetch('tempc');
+      let resTempF = await fetch('tempf');
+      let resHum = await fetch('humidity');
+      let tempC = await resTempC.text();
+      let tempF = await resTempF.text();
+      let hum = await resHum.text()
+      console.log(`Temp C: ${tempC}\nTemp F: ${tempF}\nHumidity: ${hum} %`);
+      document.getElementById("tempf").innerText = `Temp F: ${tempF} F`;
+      document.getElementById("tempc").innerText = `Temp C: ${tempC} C`;
+      document.getElementById("humidity").innerText = `Humidity: ${hum} %`;
+    }, 2000);
+  </script>
+
+  <script>
+
+    const monitorcard = document.getElementById("monitor-card");
+    const monitortitle = document.getElementById("monitor-title");
+
+    document.getElementById("enable-btn").addEventListener("click", async (e) => {
+      try {
+        e.preventDefault();
+        monitorcard.classList.add("bg-primary");
+        monitorcard.classList.remove("bg-light");
+        monitortitle.classList.remove("text-muted")
+        monitortitle.innerText = "Monitoring " + String.fromCodePoint(0x1f575)
+
+        let res = await fetch("enable", {
+          method: "post",
+          body: {}
+        });
+        console.log("enable alarm request sent", res);
+      } catch (error) {
+        console.log(`Error when submitting enable request: ${error}`);
+      }
+    })
+
+    document.getElementById("disable-btn").addEventListener("click", async (e) => {
+      try {
+        e.preventDefault();
+        monitorcard.classList.remove("bg-primary")
+        monitorcard.classList.add("bg-light")
+        monitortitle.classList.add("text-muted")
+        monitortitle.innerText = "Monitoring Disabled"
+
+        let res = await fetch("disable", {
+          method: "post",
+          body: {}
+        });
+        console.log("disable alarm request sent", res);
+      } catch (error) {
+        console.log(`Error when submitting disable request: ${error}`);
+      }
+    })
+  </script>
 </body>
+
 </html>
