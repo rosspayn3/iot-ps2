@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Page</title>
+    <style>
+    body{{
+    background-color: #555;
+    color: white;
+    }}
+    </style>
+<body>
+    <p>To put a Python variable into an HTML page, use brackets like this: </pre>{{variableName}}</pre></p>
+    <p>Then in cherrypy, return the HTML file with <pre>return open("file.html").read().format(variableName=abc123)</pre></p>
+    <hr>
+    <h3>HERE IS THE TEMPERATURE</h3>
+    <p>{tempF} F</p>
+    <p>{tempC} C</p>
+</body>
+</html>
