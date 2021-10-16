@@ -21,18 +21,18 @@
     </div>
     
     <script>
-        setInterval(async function getTemps(){
-            let resTempC = await fetch('tempc');
-            let resTempF = await fetch('tempf');
-	    let resHum = await fetch('humidity');
-            let tempC = await resTempC.text();
-            let tempF = await resTempF.text();
-	    let hum = await resHum.text()
-            console.log(`Temp C: ${tempC}\nTemp F: ${tempF}\nHumidity: ${hum} %`);
-            document.getElementById("tempf").innerText = `Temp F: ${tempF} F`;
-            document.getElementById("tempc").innerText = `Temp C: ${tempC} C`;
-            document.getElementById("humidity").innerText = `Humidity: ${hum} %`;
-        }, 1000);
+      setInterval(async function getTemps(){
+        let resTempC = await fetch('faketempc');
+        let resTempF = await fetch('faketempf');
+        let resHum = await fetch('fakehumidity');
+        let tempC = await resTempC.text();
+        let tempF = await resTempF.text();
+        let hum = await resHum.text()
+        console.log(`Temp C: ${tempC}\nTemp F: ${tempF}\nHumidity: ${hum} %`);
+        document.getElementById("tempf").innerText = `Temp F: ${tempF} F`;
+        document.getElementById("tempc").innerText = `Temp C: ${tempC} C`;
+        document.getElementById("humidity").innerText = `Humidity: ${hum} %`;
+      }, 2000);
     </script>
 </body>
 </html>
