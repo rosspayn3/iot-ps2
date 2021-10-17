@@ -13,7 +13,15 @@
     }
 
     .card {
-      outline: ridge 3px;
+      outline: ridge black 4px;
+    }
+
+    #alerts-list ul {
+      list-style: none;
+    }
+
+    #alerts-list ul li {
+      margin-bottom: 0.5rem;
     }
   </style>
   <title>Dashboard</title>
@@ -22,28 +30,38 @@
 <body class="gradient-custom pt-4">
   <div class="container">
 
-    <div class="card mb-4 text-center bg-light text-dark shadow">
+    <div class="card mb-3 text-center bg-light text-dark shadow">
       <div class="card-body">
         <h4 class="card-title mb-3">Home Monitoring Dashboard</h4>
-        <p class="card-text">Ross Payne & Jacob Baltazar</p>
+        <p class="card-text">Ross Payne</p>
       </div>
     </div>
+
     <hr class="mb-5 bg-dark" style="height: 5px">
 
-    <div class="row">
+    <div class="row mb-5">
 
-      <div class="col-md-1"></div>
+      <div class="col-sm-1"></div>
       <!--end col-->
 
-      <div class="col-md-4">
+      <div class="col-sm-4">
 
         <div class="card mb-4 text-center bg-warning bg-gradient shadow">
           <div class="card-body">
-            <h4 class="card-title mb-3">Temperature &#x1f321;</h4>
+            <h3 class="card-title mb-3">Temperature &#x1f321;</h3>
             <p class="card-text" id="tempc">0 &deg;C</p>
             <p class="card-text" id="tempf">0 &deg;F</p>
           </div>
         </div>
+
+      </div>
+      <!--end col-->
+
+      <div class="col-sm-1"></div>
+      <!--end col-->
+
+
+      <div class="col-sm-3">
 
         <div class="card mb-4 text-center bg-info bg-gradient shadow">
           <div class="card-body">
@@ -52,17 +70,24 @@
           </div>
         </div>
 
-        <!--end col-->
       </div>
-
-      <div class="col-md-2"></div>
       <!--end col-->
 
-      <div class="col-md-4">
+
+
+    </div>
+    <!--end row-->
+
+    <div class="row">
+
+      <div class="col-sm-1"></div>
+      <!--end col-->
+
+      <div class="col-sm-4">
 
         <div class="card mb-4 text-center bg-primary bg-gradient shadow" id="monitor-card">
           <div class="card-body">
-            <h4 class="card-title mb-3" id="monitor-title">Monitoring &#x1f575;</h4>
+            <h3 class="card-title mb-3" id="monitor-title">Monitoring &#x1f575;</h3>
             <form action="/enable" method="post">
               <button type="submit" name="enable" id="enable-btn" value="enable"
                 class="btn btn-success p-2 mx-2 border border-dark border-2">Enable</button>
@@ -72,44 +97,115 @@
           </div>
         </div>
 
-        <div class="card mb-4 text-center bg-light shadow">
+      </div>
+      <!--end col-->
+
+      <div class="col-sm-1"></div>
+      <!--end col-->
+
+      <div class="col-sm-6">
+
+        <div class="card mb-4 text-center bg-light bg-gradient shadow" id="alerts-card">
           <div class="card-body">
-            <h4 class="card-title mb-3">Alerts &#x1f6a8;</h4>
-            <p class="card-text" id="humidity">None</p>
+            <h3 class="card-title mb-3">Alerts &#x1f6a8;</h3>
+            <button class="btn btn-secondary p-2 mb-3 border border-dark border-2" id="clear-btn">Clear</button>
+            <div id="alerts-list">
+              <h4 class="card-text mb-4">None</h4>
+            </div>
           </div>
         </div>
 
-        <!--end col-->
       </div>
-
-      <div class="col-md-1"></div>
       <!--end col-->
 
-      <!--end row-->
     </div>
+    <!--end row-->
 
-    <!--end container-->
+
   </div>
-
-  <script>
-    setInterval(async function getTemps() {
-      let resTempC = await fetch('faketempc');
-      let resTempF = await fetch('faketempf');
-      let resHum = await fetch('fakehumidity');
-      let tempC = await resTempC.text();
-      let tempF = await resTempF.text();
-      let hum = await resHum.text()
-      console.log(`Temp C: ${tempC}\nTemp F: ${tempF}\nHumidity: ${hum} %`);
-      document.getElementById("tempf").innerText = `${tempF} \u00b0F`;
-      document.getElementById("tempc").innerText = `${tempC} \u00b0C`;
-      document.getElementById("humidity").innerText = `Humidity: ${hum} %`;
-    }, 3000);
-  </script>
+  <!--end container-->
 
   <script>
 
+    const alertsCard = document.getElementById("alerts-card");
+    const alertsList = document.getElementById("alerts-list");
+    const clearButton = document.getElementById("clear-btn")
     const monitorcard = document.getElementById("monitor-card");
     const monitortitle = document.getElementById("monitor-title");
+
+    // refresh data every X seconds
+    setInterval(async function getData() {
+
+      // fetch data from API
+      let resTempC = await fetch('faketempc');
+      let resTempF = await fetch('faketempf');
+      let resHumidity = await fetch('fakehumidity');
+      let resAlerts = await fetch('alerts');
+
+      // don't do anything if there's a bad response
+      if (resTempC.status == 200 && resTempF.status == 200 && resHumidity.status == 200 && resAlerts.status == 200) {
+
+        // parse data
+        let tempC = await resTempC.text();
+        let tempF = await resTempF.text();
+        let humidity = await resHumidity.text()
+        let alertsJSON = await resAlerts.json()
+        alertsObject = JSON.parse(alertsJSON);
+
+        // check data in browser console
+        console.log(`Data from server:\n\nTemp C: ${tempC}\nTemp F: ${tempF}\nHumidity: ${humidity} %\nAlerts: `, alertsObject);
+
+        // style alerts card based on number of alerts
+        numAlerts = Object.keys(alertsObject).length
+
+        let alertsHTML = ""
+        if (numAlerts > 0) {
+          if (numAlerts == 1) {
+            alertsHTML = `<h4 class="card-text mb-4">${numAlerts} Alert!</h4><ul>`;
+          } else {
+            alertsHTML = `<h4 class="card-text mb-4">${numAlerts} Alerts!</h4><ul>`;
+          }
+          // build list of alerts from data object
+          for (let x in alertsObject) {
+            alertsHTML += `<li><strong>${x} :</strong> ${alertsObject[x]}</li>`
+          }
+          alertsCard.classList.remove("bg-light")
+          alertsList.classList.remove("text-dark")
+          clearButton.classList.remove("btn-secondary")
+          alertsCard.classList.add("bg-danger")
+          alertsList.classList.add("text-light")
+          clearButton.classList.add("btn-light")
+
+        } else {
+          alertsHTML = `<h4 class="card-text mb-4">None</h4>`;
+          alertsCard.classList.remove("bg-danger")
+          alertsList.classList.remove("text-light")
+          clearButton.classList.remove("btn-light")
+          alertsCard.classList.add("bg-light")
+          alertsList.classList.add("text-dark")
+          clearButton.classList.add("btn-secondary")
+        }
+
+        // update DOM with new data
+        document.getElementById("tempf").innerText = `${tempF} \u00b0F`;
+        document.getElementById("tempc").innerText = `${tempC} \u00b0C`;
+        document.getElementById("humidity").innerText = `Humidity: ${humidity} %`;
+        alertsList.innerHTML = alertsHTML;
+
+      } else {
+        // bad response 
+        console.log("ERROR GETTING RESPONSE FROM SERVER:", resTempC, resTempF, resHumidity, resAlerts);
+      }
+
+
+
+    }, 3000);
+
+
+    // button listeners to arm/disarm system
+    // and style monitoring card based on armed status
+
+
 
     document.getElementById("enable-btn").addEventListener("click", async (e) => {
       try {
@@ -117,8 +213,10 @@
         monitorcard.classList.add("bg-primary");
         monitorcard.classList.remove("bg-light");
         monitortitle.classList.remove("text-muted")
+        // stupid hack to add an emoji
         monitortitle.innerText = "Monitoring " + String.fromCodePoint(0x1f575)
 
+        // make request to "enable" endpoint to arm system
         let res = await fetch("enable", {
           method: "post",
           body: {}
@@ -134,14 +232,39 @@
         monitorcard.classList.remove("bg-primary")
         monitorcard.classList.add("bg-light")
         monitortitle.classList.add("text-muted")
-        monitortitle.innerText = "Monitoring Disabled"
+        // stupid hack to add an emoji
+        monitortitle.innerText = "Monitoring Disabled " + String.fromCodePoint(0x1f648)
 
+        // make request to "disable" endpoint to disarm system
         let res = await fetch("disable", {
           method: "post",
           body: {}
         });
       } catch (error) {
         console.log(`Error when submitting disable request: ${error}`);
+      }
+    })
+
+    document.getElementById("clear-btn").addEventListener("click", async (e) => {
+      try {
+        e.preventDefault();
+
+        // make request to "clearalerts" endpoint to disarm system
+        let res = await fetch("clearalerts", {
+          method: "post",
+          body: {}
+        });
+        if (res.status == 200) {
+          alertsList.innerHTML = `<h4 class="card-text mb-4">None</h4>`
+          alertsCard.classList.remove("bg-danger")
+          alertsList.classList.remove("text-light")
+          clearButton.classList.remove("btn-light")
+          alertsCard.classList.add("bg-light")
+          alertsList.classList.add("text-dark")
+          clearButton.classList.add("btn-secondary")
+        }
+      } catch (error) {
+        console.log(`Error when submitting clear alerts request: ${error}`);
       }
     })
   </script>

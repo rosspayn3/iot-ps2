@@ -1,9 +1,9 @@
-import cherrypy, time, threading
+import cherrypy, time, threading, datetime, json
 from fakesensors import getFakeTempF, getFakeTempC, getFakeHumidity
 #from realsensors import readHumidity, readTemp
 
-times = 0
 humidity = 0
+alerts = {}
 armed = True
 
 def monitor():
@@ -11,11 +11,14 @@ def monitor():
         global armed
         print("🔵 watching...")
         alert(armed)
-        time.sleep(1)
+        time.sleep(2)
 
 def alert(armed):
+    global alerts
     if armed:
         print("🟡 ALERT ALERT 🟡")
+        timestamp = datetime.datetime.now()
+        alerts["{:%b-%d-%Y %H:%M:%S}".format(timestamp)] = "Movement detected"
 
 class HomeMonitor(object):
     @cherrypy.expose
@@ -75,6 +78,19 @@ class HomeMonitor(object):
         global armed
         armed = False
         print("🔴 alerts disabled")
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def alerts(self):
+        global alerts
+        JSON = json.dumps(alerts)
+        return JSON
+
+    @cherrypy.expose
+    def clearalerts(self):
+        global alerts
+        alerts = {}
+        print("🟡 alerts cleared")
 
 
 if __name__ == "__main__":
