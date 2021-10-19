@@ -157,18 +157,21 @@
 
         // style alerts card based on number of alerts
         numAlerts = Object.keys(alertsObject).length
-
         let alertsHTML = ""
+
         if (numAlerts > 0) {
+
           if (numAlerts == 1) {
             alertsHTML = `<h4 class="card-text mb-4">${numAlerts} Alert!</h4><ul>`;
           } else {
             alertsHTML = `<h4 class="card-text mb-4">${numAlerts} Alerts!</h4><ul>`;
           }
+
           // build list of alerts from data object
           for (let x in alertsObject) {
             alertsHTML += `<li><strong>${x} :</strong> ${alertsObject[x]}</li>`
           }
+
           alertsCard.classList.remove("bg-light")
           alertsList.classList.remove("text-dark")
           clearButton.classList.remove("btn-secondary")
@@ -204,8 +207,6 @@
 
     // button listeners to arm/disarm system
     // and style monitoring card based on armed status
-
-
 
     document.getElementById("enable-btn").addEventListener("click", async (e) => {
       try {
@@ -249,7 +250,7 @@
       try {
         e.preventDefault();
 
-        // make request to "clearalerts" endpoint to disarm system
+        // make request to "clearalerts" endpoint to clear alerts dict and DOM element
         let res = await fetch("clearalerts", {
           method: "post",
           body: {}
