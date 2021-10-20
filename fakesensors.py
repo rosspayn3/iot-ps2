@@ -1,13 +1,9 @@
 import random
 
 
-def getFakeTempC():
-    temp = random.uniform(0,30)
+def getFakeTemp():
+    temp = random.uniform(-10,40)
     return temp
-    
-def getFakeTempF():
-    temp = random.uniform(0,30)
-    return temp * 9/5 + 32
 
 def getFakeHumidity():
     humidity = random.uniform(30,80)
