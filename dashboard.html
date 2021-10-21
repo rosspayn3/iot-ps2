@@ -7,6 +7,7 @@
   <style>
     .background {
       background: #e3e3e3;
+
       background: -webkit-linear-gradient(to bottom, rgb(255, 255, 255), rgba(63, 95, 114, 0.65));
       background: linear-gradient(to bottom, rgb(255, 255, 255), rgba(63, 95, 114, 0.65));
 
@@ -20,12 +21,15 @@
 
     #alerts-list ul {
       list-style: none;
+      padding-left: 0;
     }
 
     #alerts-list ul li {
       margin-bottom: 0.5rem;
     }
   </style>
+  <link rel="icon" type="image/png"
+    href="https://pbs.twimg.com/profile_images/1163811477725351937/sDYrfrpt_400x400.jpg">
   <title>Dashboard</title>
 </head>
 
@@ -49,7 +53,7 @@
 
         <div class="col-sm-4">
 
-          <div class="card mb-4 text-center bg-warning bg-gradient shadow">
+          <div id="temp-card" class="card mb-4 text-center bg-gradient shadow">
             <div class="card-body">
               <h3 class="card-title mb-3">Temperature &#x1f321;</h3>
               <p class="card-text" id="tempc">0 &deg;C</p>
@@ -133,12 +137,6 @@
 
   <script>
 
-    const alertsCard = document.getElementById("alerts-card");
-    const alertsList = document.getElementById("alerts-list");
-    const clearButton = document.getElementById("clear-btn")
-    const monitorcard = document.getElementById("monitor-card");
-    const monitortitle = document.getElementById("monitor-title");
-
     // refresh data every X seconds
     setInterval(async function getData() {
 
@@ -148,15 +146,16 @@
       // fetch data from API
       try {
         resAlerts = await fetch('alerts');
-        resData = await fetch('fakedata');
+        resData = await fetch('data');
       } catch (error) {
         console.log("ERROR GETTING RESPONSE FROM SERVER:", error);
       }
 
-
-      // don't do anything if there's a bad response
-      if (resData != null && resAlerts != null) {
-
+      if (resData.status != 200 || resAlerts.status != 200) {
+        // bad response 
+        console.log("ERROR: NO DATA RETURNED FROM SERVER");
+      } else {
+        // got a response
         let alertsJSON = await resAlerts.json()
         let sensorJSON = await resData.json()
         alertsObject = JSON.parse(alertsJSON);
@@ -165,50 +164,13 @@
         // check data in browser console
         // console.log("Data from server:", dataObject, alertsObject);
 
-        // style alerts card based on number of alerts
-        numAlerts = Object.keys(alertsObject).length
-        let alertsHTML = ""
-
-        if (numAlerts > 0) {
-
-          alertsHTML = `<h4 class="card-text mb-4">${numAlerts} ${numAlerts == 1 ? "Alert!" : "Alerts!"} </h4><ul>`;
-
-          // build list of alerts from data object
-          for (let x in alertsObject) {
-            alertsHTML += `<li><strong>${x} :</strong> ${alertsObject[x]}</li>`
-          }
-
-          alertsHTML += "</ul>";
-
-          alertsCard.classList.remove("bg-light")
-          alertsList.classList.remove("text-dark")
-          clearButton.classList.remove("btn-secondary")
-          alertsCard.classList.add("bg-danger")
-          alertsList.classList.add("text-light")
-          clearButton.classList.add("btn-light")
-
-        } else {
-          alertsHTML = `<h4 class="card-text mb-4">None</h4>`;
-          alertsCard.classList.remove("bg-danger")
-          alertsList.classList.remove("text-light")
-          clearButton.classList.remove("btn-light")
-          alertsCard.classList.add("bg-light")
-          alertsList.classList.add("text-dark")
-          clearButton.classList.add("btn-secondary")
-        }
-
-        // update DOM with new data
-        document.getElementById("tempf").innerText = `${dataObject.tempF} \u00b0F`;
-        document.getElementById("tempc").innerText = `${dataObject.tempC} \u00b0C`;
+        // update DOM elements
         document.getElementById("humidity").innerText = `Humidity: ${dataObject.humidity} %`;
-        alertsList.innerHTML = alertsHTML;
-
-      } else {
-        // bad response 
-        console.log("ERROR: NO DATA RETURNED FROM SERVER");
+        styleTempCard(dataObject.tempC, dataObject.tempF);
+        styleAlertsCard(alertsObject);
       }
 
-    }, 1000);
+    }, 5000);
 
 
     // button listeners to arm/disarm system
@@ -217,12 +179,13 @@
     document.getElementById("enable-btn").addEventListener("click", async (e) => {
       try {
         e.preventDefault();
+        const monitorcard = document.getElementById("monitor-card");
+        const monitortitle = document.getElementById("monitor-title");
         monitorcard.classList.add("bg-primary");
         monitorcard.classList.remove("bg-light");
-        monitortitle.classList.remove("text-muted")
+        monitortitle.classList.remove("text-muted");
         // stupid hack to add an emoji
-        monitortitle.innerText = "Monitoring " + String.fromCodePoint(0x1f575)
-
+        monitortitle.innerText = "Monitoring " + String.fromCodePoint(0x1f575);
         // make request to "enable" endpoint to arm system
         let res = await fetch("enable", {
           method: "post",
@@ -236,11 +199,13 @@
     document.getElementById("disable-btn").addEventListener("click", async (e) => {
       try {
         e.preventDefault();
-        monitorcard.classList.remove("bg-primary")
-        monitorcard.classList.add("bg-light")
-        monitortitle.classList.add("text-muted")
+        const monitorcard = document.getElementById("monitor-card");
+        const monitortitle = document.getElementById("monitor-title");
+        monitorcard.classList.remove("bg-primary");
+        monitorcard.classList.add("bg-light");
+        monitortitle.classList.add("text-muted");
         // stupid hack to add an emoji
-        monitortitle.innerText = "Monitoring Disabled " + String.fromCodePoint(0x1f648)
+        monitortitle.innerText = "Monitoring Disabled " + String.fromCodePoint(0x1f648);
 
         // make request to "disable" endpoint to disarm system
         let res = await fetch("disable", {
@@ -256,6 +221,10 @@
       try {
         e.preventDefault();
 
+        const alertsCard = document.getElementById("alerts-card");
+        const alertsList = document.getElementById("alerts-list");
+        const clearButton = document.getElementById("clear-btn")
+
         // make request to "clearalerts" endpoint to clear alerts dict and DOM element
         let res = await fetch("clearalerts", {
           method: "post",
@@ -263,17 +232,77 @@
         });
         if (res.status == 200) {
           alertsList.innerHTML = `<h4 class="card-text mb-4">None</h4>`
-          alertsCard.classList.remove("bg-danger")
           alertsList.classList.remove("text-light")
-          clearButton.classList.remove("btn-light")
-          alertsCard.classList.add("bg-light")
           alertsList.classList.add("text-dark")
+          alertsCard.classList.add("bg-light")
+          alertsCard.classList.remove("bg-danger")
+          clearButton.classList.remove("btn-light")
           clearButton.classList.add("btn-secondary")
         }
       } catch (error) {
         console.log(`Error when submitting clear alerts request: ${error}`);
       }
     })
+
+    function styleTempCard(tempC, tempF) {
+
+      const tempCard = document.getElementById("temp-card");
+      // update DOM with new data
+      document.getElementById("tempf").innerText = `${tempF} \u00b0F`;
+      document.getElementById("tempc").innerText = `${tempC} \u00b0C`;
+
+      // color temp card based on sensor reading
+      let hue = 260 / (1 + (2.71828 ** (-1 + 0.1 * tempC)))
+      tempCard.style.backgroundColor = `hsl(${hue}, 70%, 50%)`
+
+      if (tempC < -2) {
+        tempCard.style.color = "white";
+      } else {
+        tempCard.style.color = "black";
+      }
+
+    }
+
+    function styleAlertsCard(alertsObject) {
+
+      const alertsCard = document.getElementById("alerts-card");
+      const alertsList = document.getElementById("alerts-list");
+      const clearButton = document.getElementById("clear-btn");
+
+      // style alerts card based on number of alerts
+      numAlerts = Object.keys(alertsObject).length
+      let alertsHTML = ""
+
+      if (numAlerts > 0) {
+
+        alertsHTML = `<h4 class="card-text mb-4">${numAlerts} ${numAlerts == 1 ? "Alert!" : "Alerts!"} </h4><ul>`;
+
+        // build list of alerts from data object
+        for (let x in alertsObject) {
+          alertsHTML += `<li><strong>${x} :</strong> ${alertsObject[x]}</li>`
+        }
+
+        alertsHTML += "</ul>";
+
+        alertsCard.classList.remove("bg-light")
+        alertsCard.classList.add("bg-danger")
+        alertsList.classList.remove("text-dark")
+        alertsList.classList.add("text-light")
+        clearButton.classList.remove("btn-secondary")
+        clearButton.classList.add("btn-light")
+
+      } else {
+        alertsHTML = `<h4 class="card-text mb-4">None</h4>`;
+        alertsCard.classList.remove("bg-danger")
+        alertsCard.classList.add("bg-light")
+        alertsList.classList.remove("text-light")
+        alertsList.classList.add("text-dark")
+        clearButton.classList.remove("btn-light")
+        clearButton.classList.add("btn-secondary")
+      }
+
+      alertsList.innerHTML = alertsHTML;
+    }
   </script>
 </body>
 
