@@ -1,5 +1,5 @@
 import cherrypy, time, threading, json
-from fakesensors import getFakeTemp, getFakeHumidity
+from fakesensors import getFakeTemp, getFakeHumidity, getFakeDistance
 #from realsensors import readHumidity, readTemp
 
 humidity = 0
@@ -7,18 +7,22 @@ data = {}
 alerts = {}
 armed = True
 
+
 def fakemonitor():
     while True:
         global armed
-        print("🔵 Monitoring...")
-        fakealert(armed)
-        time.sleep(2)
+        if armed:
+            print("🔵 Monitoring...")
+            distance = getFakeDistance()
+            print("📏 " + str( round(distance, 3)) )
+            if distance < 10:
+                fakealert()
+        time.sleep(1)
 
-def fakealert(armed):
+def fakealert():
     global alerts
-    if armed:
-        print("🟡 ALERT ALERT")
-        alerts[time.strftime("%a %b-%d-%Y %#I:%M:%S %p")] = "Movement detected"
+    print("🟡 ALERT ALERT")
+    alerts[time.strftime("%a %b-%d-%Y %#I:%M:%S %p")] = "Movement detected"
 
 class HomeMonitor(object):
     @cherrypy.expose
@@ -34,10 +38,12 @@ class HomeMonitor(object):
     def fakedata(self):
         global data
         global humidity
-        humidity = getFakeHumidity()
+        global armed
+        data["armed"] = armed
         tempc = getFakeTemp()
         data["tempC"] = str(round(tempc, 1))
         data["tempF"] = str(round((tempc * 9 / 5) + 32, 1))
+        humidity = getFakeHumidity()
         data["humidity"] = str(round(humidity, 1))
         JSON = json.dumps(data)
         return JSON
@@ -47,15 +53,15 @@ class HomeMonitor(object):
     def data(self):
         global data
         global humidity
+        data["armed"] = armed
         result = readHumidity()
         if result:
             humidity, temp = result
+            data["humidity"] = str(round(humidity, 1))
         temp = readTemp()
         if temp != None:
-            return str(round(temp, 1))
-        data["tempC"] = str(round(temp, 1))
-        data["tempF"] = str(round( (temp * 9 / 5) + 32, 1))
-        data["humidity"] = str(round(humidity, 1))
+            data["tempC"] = str(round(temp, 1))
+            data["tempF"] = str(round( (temp * 9 / 5) + 32, 1))
         JSON = json.dumps(data)
         return JSON
 
@@ -71,6 +77,7 @@ class HomeMonitor(object):
         if(cherrypy.request.remote.ip in ("127.0.0.1", "::1")):
             global armed
             armed = True
+            cherrypy.response.cookie['armed'] = True
             print("🟢 alerts enabled")
 
     @cherrypy.expose
@@ -78,8 +85,8 @@ class HomeMonitor(object):
         if(cherrypy.request.remote.ip in ("127.0.0.1", "::1")):
             global armed
             armed = False
+            cherrypy.response.cookie['armed'] = False
             print("🔴 alerts disabled")
-        
 
     @cherrypy.expose
     def clearalerts(self):

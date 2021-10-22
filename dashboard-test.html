@@ -27,6 +27,16 @@
     #alerts-list ul li {
       margin-bottom: 0.5rem;
     }
+
+    .armed {
+      background-color: #0d6efd;
+      color: black;
+    }
+
+    .disarmed {
+      background-color: #f8f9fa;
+      color: #6c757d;
+    }
   </style>
   <link rel="icon" type="image/png"
     href="https://pbs.twimg.com/profile_images/1163811477725351937/sDYrfrpt_400x400.jpg">
@@ -137,81 +147,84 @@
 
   <script>
 
-    // refresh data every X seconds
-    setInterval(async function getData() {
+    function delay(time) {
+      return new Promise(resolve => setTimeout(resolve, time))
+    }
 
-      let resAlerts;
-      let resData;
+    async function getData() {
+      while (true) {
+        let resAlerts;
+        let resData;
 
-      // fetch data from API
-      try {
-        resAlerts = await fetch('alerts');
-        resData = await fetch('fakedata');
-      } catch (error) {
-        console.log("ERROR GETTING RESPONSE FROM SERVER:", error);
+        // fetch data from API
+        try {
+          resAlerts = await fetch('alerts');
+          resData = await fetch('fakedata');
+        } catch (error) {
+          console.log("ERROR GETTING RESPONSE FROM SERVER:", error);
+        }
+
+        if (resData.status != 200 || resAlerts.status != 200) {
+          // bad response 
+          console.log("ERROR: NO DATA RETURNED FROM SERVER");
+        } else {
+          // got a response
+          let alertsJSON = await resAlerts.json()
+          let sensorJSON = await resData.json()
+          alertsObject = JSON.parse(alertsJSON);
+          dataObject = JSON.parse(sensorJSON)
+
+          // check data in browser console
+          console.log("Data from server:", dataObject, alertsObject);
+
+          // update DOM elements
+          document.getElementById("humidity").innerText = `Humidity: ${dataObject.humidity} %`;
+          styleTempCard(dataObject.tempC, dataObject.tempF);
+          styleAlertsCard(alertsObject);
+          styleMonitorCard(dataObject.armed)
+
+          // wait 3 seconds then get data again
+          await delay(3000);
+        }
       }
+    }
 
-      if (resData.status != 200 || resAlerts.status != 200) {
-        // bad response 
-        console.log("ERROR: NO DATA RETURNED FROM SERVER");
-      } else {
-        // got a response
-        let alertsJSON = await resAlerts.json()
-        let sensorJSON = await resData.json()
-        alertsObject = JSON.parse(alertsJSON);
-        dataObject = JSON.parse(sensorJSON)
-
-        // check data in browser console
-        // console.log("Data from server:", dataObject, alertsObject);
-
-        // update DOM elements
-        document.getElementById("humidity").innerText = `Humidity: ${dataObject.humidity} %`;
-        styleTempCard(dataObject.tempC, dataObject.tempF);
-        styleAlertsCard(alertsObject);
-      }
-
-    }, 5000);
+    getData();
 
 
-    // button listeners to arm/disarm system
-    // and style monitoring card based on armed status
+    // button listener to arm system and style monitoring card
 
     document.getElementById("enable-btn").addEventListener("click", async (e) => {
       try {
         e.preventDefault();
-        const monitorcard = document.getElementById("monitor-card");
-        const monitortitle = document.getElementById("monitor-title");
-        monitorcard.classList.add("bg-primary");
-        monitorcard.classList.remove("bg-light");
-        monitortitle.classList.remove("text-muted");
-        // stupid hack to add an emoji
-        monitortitle.innerText = "Monitoring " + String.fromCodePoint(0x1f575);
         // make request to "enable" endpoint to arm system
         let res = await fetch("enable", {
           method: "post",
           body: {}
         });
+        console.log(res);
+        if (res.status == 200) {
+          styleMonitorCard(true)
+        }
       } catch (error) {
         console.log(`Error when submitting enable request: ${error}`);
       }
     })
 
+    // button listener to disarm system and style monitoring card
+
     document.getElementById("disable-btn").addEventListener("click", async (e) => {
       try {
         e.preventDefault();
-        const monitorcard = document.getElementById("monitor-card");
-        const monitortitle = document.getElementById("monitor-title");
-        monitorcard.classList.remove("bg-primary");
-        monitorcard.classList.add("bg-light");
-        monitortitle.classList.add("text-muted");
-        // stupid hack to add an emoji
-        monitortitle.innerText = "Monitoring Disabled " + String.fromCodePoint(0x1f648);
-
         // make request to "disable" endpoint to disarm system
         let res = await fetch("disable", {
           method: "post",
           body: {}
         });
+        console.log(res);
+        if (res.status == 200) {
+          styleMonitorCard(false)
+        }
       } catch (error) {
         console.log(`Error when submitting disable request: ${error}`);
       }
@@ -243,6 +256,24 @@
         console.log(`Error when submitting clear alerts request: ${error}`);
       }
     })
+
+    function styleMonitorCard(armed) {
+      const monitorcard = document.getElementById("monitor-card");
+      const monitortitle = document.getElementById("monitor-title");
+      if (armed) {
+        monitorcard.classList.add("bg-primary");
+        monitorcard.classList.remove("bg-light");
+        monitortitle.classList.remove("text-muted");
+        // stupid hack to add an emoji
+        monitortitle.innerText = "Monitoring " + String.fromCodePoint(0x1f575);
+      } else {
+        monitorcard.classList.remove("bg-primary");
+        monitorcard.classList.add("bg-light");
+        monitortitle.classList.add("text-muted");
+        // stupid hack to add an emoji
+        monitortitle.innerText = "Monitoring Disabled " + String.fromCodePoint(0x1f648);
+      }
+    }
 
     function styleTempCard(tempC, tempF) {
 
