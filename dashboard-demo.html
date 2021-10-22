@@ -30,7 +30,7 @@
   </style>
   <link rel="icon" type="image/png"
     href="https://pbs.twimg.com/profile_images/1163811477725351937/sDYrfrpt_400x400.jpg">
-  <title>Dashboard</title>
+  <title>Dashboard Demo</title>
 </head>
 
 <body class="">
@@ -149,7 +149,7 @@
         // fetch data from API
         try {
           resAlerts = await fetch('alerts');
-          resData = await fetch('data');
+          resData = await fetch('fakedata');
         } catch (error) {
           console.log("ERROR GETTING RESPONSE FROM SERVER:", error);
         }
@@ -173,8 +173,8 @@
           styleAlertsCard(alertsObject);
           styleMonitorCard(dataObject.armed)
 
-          // refresh data every 2 seconds
-          await delay(2000);
+          // wait 3 seconds then get data again
+          await delay(3000);
         }
       }
     }

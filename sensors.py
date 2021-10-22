@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import os
-import RPi.GPIO as GPIO
-import time
+#import RPi.GPIO as GPIO
 import cherrypy
+from gpiozero import DistanceSensor, Buzzer
+from time import sleep, time
+from datetime import datetime
 
 ds18b20 = ''
 
@@ -11,6 +13,22 @@ def setup():
         for i in os.listdir('/sys/bus/w1/devices'):
                 if i != 'w1_bus_master1':
                         ds18b20 = '28-01201d270e10'
+
+distanceSensor = DistanceSensor(echo=22, trigger=23)  # board pins 15, 16
+buzzer = Buzzer(24, active_high=False)  # board pin 18
+
+def alert(duration):
+    startTime = time()
+    buzzer.beep(0.5, 0.25)
+
+    while time() - startTime <= duration:
+        sleep(0.1)
+
+    buzzer.off()
+
+def readDistance():
+    distance = distanceSensor.distance * 100
+    return distance
 
 def readTemp():
         location = '/sys/bus/w1/devices/' + ds18b20 + '/w1_slave'
@@ -23,7 +41,7 @@ def readTemp():
         temperature = temperature / 1000
         return temperature
 
-DHTPIN = 17
+DHTPIN = 17 # board pin 11
 
 GPIO.setmode(GPIO.BCM)
 
@@ -38,9 +56,9 @@ STATE_DATA_PULL_DOWN = 5
 def readHumidity():
         GPIO.setup(DHTPIN, GPIO.OUT)
         GPIO.output(DHTPIN, GPIO.HIGH)
-        time.sleep(0.05)
+        sleep(0.05)
         GPIO.output(DHTPIN, GPIO.LOW)
-        time.sleep(0.02)
+        sleep(0.02)
         GPIO.setup(DHTPIN, GPIO.IN, GPIO.PUD_UP)
 
         unchanged_count = 0

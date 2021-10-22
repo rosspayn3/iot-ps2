@@ -1,12 +1,20 @@
 import cherrypy, time, threading, json
 from fakesensors import getFakeTemp, getFakeHumidity, getFakeDistance
-#from realsensors import readHumidity, readTemp
+#from sensors import readHumidity, readTemp, readDistance, alert
+from gpiozero import Button
 
 humidity = 0
 data = {}
 alerts = {}
 armed = True
 
+button = Button(25)
+
+def toggleArm():
+    global armed
+    armed = not armed
+
+button.when_pressed = toggleArm
 
 def fakemonitor():
     while True:
@@ -17,7 +25,21 @@ def fakemonitor():
             print("📏 " + str( round(distance, 3)) )
             if distance < 10:
                 fakealert()
-        time.sleep(1)
+        time.sleep(0.5)
+
+def monitor():
+    while True:
+        global armed
+        global alerts
+        if armed:
+            #print("MONITORING...")
+            distance = readDistance()
+            #print("DISTANCE FROM SENSOR: " + str(round(distance, 2)) )
+            if distance < 10:
+                alerts[time.strftime("%a %b-%d-%Y %#I:%M:%S %p")] = "Movement detected"
+                print("ALERT ALERT ALERT")
+                alert(3)
+        time.sleep(0.1)
 
 def fakealert():
     global alerts
@@ -31,7 +53,7 @@ class HomeMonitor(object):
 
     @cherrypy.expose
     def testing(self):
-        return open("dashboard-test.html").read()
+        return open("dashboard-demo.html").read()
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -95,12 +117,11 @@ class HomeMonitor(object):
             alerts = {}
             print("🟡 alerts cleared")
 
-    
 
 
 if __name__ == "__main__":
     try:
-        t1 = threading.Thread(target=fakemonitor)
+        t1 = threading.Thread(target=monitor)
         t1.daemon = True
         t1.start()
         cherrypy.quickstart(HomeMonitor())
