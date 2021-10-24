@@ -52,7 +52,7 @@ class HomeMonitor(object):
         return open("dashboard.html").read()
 
     @cherrypy.expose
-    def testing(self):
+    def demo(self):
         return open("dashboard-demo.html").read()
 
     @cherrypy.expose
