@@ -1,6 +1,6 @@
 import cherrypy, time, threading, json
 from fakesensors import getFakeTemp, getFakeHumidity, getFakeDistance
-#from sensors import readHumidity, readTemp, readDistance, alert
+from sensors import readHumidity, readTemp, readDistance, alert
 from gpiozero import Button
 
 humidity = 0

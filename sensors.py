@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
-#import RPi.GPIO as GPIO
-import cherrypy
+import RPi.GPIO as GPIO
 from gpiozero import DistanceSensor, Buzzer
 from time import sleep, time
 from datetime import datetime
