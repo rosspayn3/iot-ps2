@@ -20,5 +20,5 @@
 2. GPIO17 - Humiture sensor
 3. GPIO22 - HC-SR04 ultrasonic sensor echo
 4. GPIO23 - HC-SR04 ultrasonic sensor trigger
-5. GPIO24 - Active uzzer
+5. GPIO24 - Active buzzer
 6. GPIO25 - Button
